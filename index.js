@@ -59,3 +59,31 @@ const verifyToken = (req, res, next) => {
     next();
   });
 };
+
+/* ======================
+   AUTH ROUTES
+====================== */
+
+// JWT issue
+app.post("/jwt", async (req, res) => {
+  const user = req.body;
+  const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+    expiresIn: "7d",
+  });
+  res.send({ token });
+});
+
+// Save user
+app.post("/users", async (req, res) => {
+  const user = req.body;
+  const exists = await usersCollection.findOne({ email: user.email });
+  if (exists) return res.send({ message: "User exists" });
+  const result = await usersCollection.insertOne(user);
+  res.send(result);
+});
+
+// Get user role
+app.get("/users/role/:email", verifyToken, async (req, res) => {
+  const user = await usersCollection.findOne({ email: req.params.email });
+  res.send({ role: user?.role || "user" });
+});
