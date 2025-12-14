@@ -87,3 +87,18 @@ app.get("/users/role/:email", verifyToken, async (req, res) => {
   const user = await usersCollection.findOne({ email: req.params.email });
   res.send({ role: user?.role || "user" });
 });
+
+/* ======================
+   SERVICES (PUBLIC)
+====================== */
+app.get("/services", async (req, res) => {
+  const result = await servicesCollection.find().toArray();
+  res.send(result);
+});
+
+app.get("/services/:id", async (req, res) => {
+  const result = await servicesCollection.findOne({
+    _id: new ObjectId(req.params.id),
+  });
+  res.send(result);
+});
