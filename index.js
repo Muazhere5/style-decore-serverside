@@ -151,3 +151,30 @@ app.patch("/decorator/status/:id", verifyToken, async (req, res) => {
   );
   res.send(result);
 });
+
+/* ======================
+   STRIPE PAYMENT
+====================== */
+app.post("/create-payment-intent", verifyToken, async (req, res) => {
+  const { price } = req.body;
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: price * 100,
+    currency: "bdt",
+    payment_method_types: ["card"],
+  });
+
+  res.send({ clientSecret: paymentIntent.client_secret });
+});
+
+app.post("/payments", verifyToken, async (req, res) => {
+  const result = await paymentsCollection.insertOne(req.body);
+  res.send(result);
+});
+
+app.get("/payments/user/:email", verifyToken, async (req, res) => {
+  const result = await paymentsCollection
+    .find({ email: req.params.email })
+    .toArray();
+  res.send(result);
+});
