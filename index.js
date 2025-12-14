@@ -102,3 +102,26 @@ app.get("/services/:id", async (req, res) => {
   });
   res.send(result);
 });
+
+/* ======================
+   ADMIN SERVICES
+====================== */
+app.post("/admin/services", verifyToken, async (req, res) => {
+  const result = await servicesCollection.insertOne(req.body);
+  res.send(result);
+});
+
+app.put("/admin/services/:id", verifyToken, async (req, res) => {
+  const result = await servicesCollection.updateOne(
+    { _id: new ObjectId(req.params.id) },
+    { $set: req.body }
+  );
+  res.send(result);
+});
+
+app.delete("/admin/services/:id", verifyToken, async (req, res) => {
+  const result = await servicesCollection.deleteOne({
+    _id: new ObjectId(req.params.id),
+  });
+  res.send(result);
+});
