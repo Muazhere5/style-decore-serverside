@@ -125,3 +125,29 @@ app.delete("/admin/services/:id", verifyToken, async (req, res) => {
   });
   res.send(result);
 });
+
+/* ======================
+   BOOKINGS
+====================== */
+app.post("/bookings", verifyToken, async (req, res) => {
+  const result = await bookingsCollection.insertOne({
+    ...req.body,
+    status: "Assigned",
+  });
+  res.send(result);
+});
+
+app.get("/bookings/user/:email", verifyToken, async (req, res) => {
+  const result = await bookingsCollection
+    .find({ userEmail: req.params.email })
+    .toArray();
+  res.send(result);
+});
+
+app.patch("/decorator/status/:id", verifyToken, async (req, res) => {
+  const result = await bookingsCollection.updateOne(
+    { _id: new ObjectId(req.params.id) },
+    { $set: { status: req.body.status } }
+  );
+  res.send(result);
+});
