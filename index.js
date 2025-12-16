@@ -181,6 +181,18 @@ app.patch("/decorator/status/:id", verifyToken, async (req, res) => {
 });
 
 /* ======================
+   DECORATORS (PUBLIC)
+====================== */
+app.get("/decorators/top", async (req, res) => {
+  const result = await usersCollection
+    .find({ role: "decorator" })
+    .limit(6)
+    .toArray();
+
+  res.send(result);
+});
+
+/* ======================
    STRIPE PAYMENT
 ====================== */
 app.post("/create-payment-intent", verifyToken, async (req, res) => {
