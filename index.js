@@ -5,9 +5,18 @@ const jwt = require("jsonwebtoken");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
+/* ======================
+   FIREBASE ADMIN SETUP
+====================== */
+const admin = require("firebase-admin");
+const serviceAccount = require("./privateKey.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
 const app = express();
 const port = process.env.PORT || 5000;
-
 
 /* ======================
    MIDDLEWARE
@@ -15,7 +24,8 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-MONGODB CONNECTION
+/* ======================
+   MONGODB CONNECTION
 ====================== */
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@project00.3ikpony.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -46,7 +56,7 @@ async function connectDB() {
 connectDB();
 
 /* ======================
-   JWT MIDDLEWARE
+   JWT MIDDLEWARE (CUSTOM)
 ====================== */
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -61,10 +71,28 @@ const verifyToken = (req, res, next) => {
 };
 
 /* ======================
+   OPTIONAL: FIREBASE TOKEN VERIFY
+====================== */
+const verifyFirebaseToken = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).send({ message: "Unauthorized" });
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = await admin.auth().verifyIdToken(token);
+    req.decoded = decoded;
+    next();
+  } catch (error) {
+    res.status(403).send({ message: "Forbidden" });
+  }
+};
+
+/* ======================
    AUTH ROUTES
 ====================== */
 
-// JWT issue
+// JWT issue (after Firebase login)
 app.post("/jwt", async (req, res) => {
   const user = req.body;
   const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
@@ -177,4 +205,15 @@ app.get("/payments/user/:email", verifyToken, async (req, res) => {
     .find({ email: req.params.email })
     .toArray();
   res.send(result);
+});
+
+/* ======================
+   SERVER
+====================== */
+app.get("/", (req, res) => {
+  res.send("StyleDecor Server Running");
+});
+
+app.listen(port, () => {
+  console.log(`🚀 Server running on port ${port}`);
 });
