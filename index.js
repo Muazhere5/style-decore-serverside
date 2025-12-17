@@ -25,9 +25,9 @@ app.use(cors());
 app.use(express.json());
 
 /* ======================
-   MONGODB CONNECTION
+   MONGODB CONNECTION (NEW USER)
 ====================== */
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@project00.3ikpony.mongodb.net/?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@project00.3ikpony.mongodb.net/?appName=Project00`;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -43,15 +43,19 @@ let bookingsCollection;
 let paymentsCollection;
 
 async function connectDB() {
-  await client.connect();
-  const db = client.db("styleDecorDB");
+  try {
+    await client.connect();
+    const db = client.db("styleDecorDB");
 
-  usersCollection = db.collection("users");
-  servicesCollection = db.collection("services");
-  bookingsCollection = db.collection("bookings");
-  paymentsCollection = db.collection("payments");
+    usersCollection = db.collection("users");
+    servicesCollection = db.collection("services");
+    bookingsCollection = db.collection("bookings");
+    paymentsCollection = db.collection("payments");
 
-  console.log("✅ MongoDB Connected");
+    console.log("✅ MongoDB Connected with new user");
+  } catch (error) {
+    console.error("❌ MongoDB Connection Failed", error);
+  }
 }
 connectDB();
 
@@ -91,8 +95,6 @@ const verifyFirebaseToken = async (req, res, next) => {
 /* ======================
    AUTH ROUTES
 ====================== */
-
-// JWT issue (after Firebase login)
 app.post("/jwt", async (req, res) => {
   const user = req.body;
   const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
@@ -101,16 +103,15 @@ app.post("/jwt", async (req, res) => {
   res.send({ token });
 });
 
-// Save user
 app.post("/users", async (req, res) => {
   const user = req.body;
   const exists = await usersCollection.findOne({ email: user.email });
   if (exists) return res.send({ message: "User exists" });
+
   const result = await usersCollection.insertOne(user);
   res.send(result);
 });
 
-// Get user role
 app.get("/users/role/:email", verifyToken, async (req, res) => {
   const user = await usersCollection.findOne({ email: req.params.email });
   res.send({ role: user?.role || "user" });
